@@ -1,15 +1,15 @@
-import { useState } from 'react';
+import { useState } from "react";
 
-import NewProject from './components/NewProject.jsx';
-import NoProjectSelected from './components/NoProjectSelected.jsx';
-import ProjectsSidebar from './components/ProjectsSidebar.jsx';
-import SelectedProject from './components/SelectedProject.jsx';
+import NewProject from "./components/NewProject.jsx";
+import NoProjectSelected from "./components/NoProjectSelected.jsx";
+import ProjectsSidebar from "./components/ProjectsSidebar.jsx";
+import SelectedProject from "./components/SelectedProject.jsx";
 
 function App() {
   const [projectsState, setProjectsState] = useState({
     selectedProjectId: undefined,
     projects: [],
-    tasks: [],
+    tasks: {}, // Store tasks separately for each project
   });
 
   function handleAddTask(text) {
@@ -17,13 +17,18 @@ function App() {
       const taskId = Math.random();
       const newTask = {
         text: text,
-        projectId: prevState.selectedProjectId,
         id: taskId,
       };
 
       return {
         ...prevState,
-        tasks: [newTask, ...prevState.tasks],
+        tasks: {
+          ...prevState.tasks,
+          [prevState.selectedProjectId]: [
+            newTask,
+            ...(prevState.tasks[prevState.selectedProjectId] || []),
+          ],
+        },
       };
     });
   }
@@ -32,7 +37,12 @@ function App() {
     setProjectsState((prevState) => {
       return {
         ...prevState,
-        tasks: prevState.tasks.filter((task) => task.id !== id),
+        tasks: {
+          ...prevState.tasks,
+          [prevState.selectedProjectId]: prevState.tasks[
+            prevState.selectedProjectId
+          ].filter((task) => task.id !== id),
+        },
       };
     });
   }
@@ -76,18 +86,23 @@ function App() {
         ...prevState,
         selectedProjectId: undefined,
         projects: [...prevState.projects, newProject],
+        tasks: { ...prevState.tasks, [projectId]: [] },
       };
     });
   }
 
   function handleDeleteProject() {
     setProjectsState((prevState) => {
+      const newTasks = { ...prevState.tasks };
+      delete newTasks[prevState.selectedProjectId];
+
       return {
         ...prevState,
         selectedProjectId: undefined,
         projects: prevState.projects.filter(
           (project) => project.id !== prevState.selectedProjectId
         ),
+        tasks: newTasks,
       };
     });
   }
@@ -102,7 +117,7 @@ function App() {
       onDelete={handleDeleteProject}
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
-      tasks={projectsState.tasks}
+      tasks={projectsState.tasks[projectsState.selectedProjectId] || []}
     />
   );
 
